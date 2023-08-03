@@ -1,0 +1,3 @@
+This folder contains the code to train the NetActivity model. Code was generated before the implementation of NetActivityTrain. We have included the original nextflow files in the workflows and modules folders used to train the models. Nonetheless, the same results are expected to be obtained with the [NetActivityTrain pipeline](https://github.com/yocra3/NetActivityTrain/). 
+
+Notice that the definition of the gene sets included in the models is based on the models trained with NetActivity. Thus, in order to reproduce the model training, the users should combine the execution of scripts in 3.select_GO_KEGG_features.R and 4.nextflow_commands.sh.
