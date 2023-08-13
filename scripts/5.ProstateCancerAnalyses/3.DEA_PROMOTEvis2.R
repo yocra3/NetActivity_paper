@@ -15,15 +15,15 @@
 
 # Load libraries ####
 library(ggplot2)
-library(ggpattern)
-library(ggrepel)
+library(viridis)
 library(dplyr)
-library(readxl)
 library(DESeq2)
-library(AnnotationDbi)
-library(xlsx)
 library(org.Hs.eg.db)
 library(clusterProfiler)
+library(SummarizedExperiment)
+library(NetActivity)
+library(NetActivityData)
+data(gtex_gokegg)
 
 # Load data ####
 message("Loading SE")
@@ -60,44 +60,59 @@ DEgenes_DESeq <- dds_DGE_results_df[which(abs(dds_DGE_results_df$log2FC) > log2(
 dim(DEgenes_DESeq)
 
 # Save results ####
-# Manuscript
+
 dir.create("results/mCRPC_analyses/")
-save(dds_DGE_results,'results/mCRPC_analyses/promoteV2bone_allgenes_results_DESeq.Rdata')
-write.csv(DEgenes_DESeq,'results/mCRPC_analyses/SupTable7_promoteV2bone_DEgenes_TTC&2LFC_DESeq.csv',row.names = F,col.names = T)
+save(dds_DGE_results, file = 'results/mCRPC_analyses/promoteV2bone_DEallgenes_results_DESeq.Rdata')
+write.csv(DEgenes_DESeq,'results/mCRPC_analyses/SupTable7_promoteV2bone_DEgenes_TTC&2LFC_DESeq.csv', row.names = F)
 
 # Overrepresentation analysis of differentially expressed genes in GO terms ####
-# Ipdate symbol genes of DE genes (does not match the order)
-DEgenes_DESeq2 <- rowData(ddsSE)$new_symbol[which(names(rowData(ddsSE)$new_symbol)%in%DEgenes_DESeq)]
+# Update symbol genes of DE genes (does not match the order)
+# DEgenes_DESeq <- read.csv('./NetActivity_results/manuscript_tables/SupTable7_promoteV2bone_DEgenes_TTC&2LFC_DESeq.csv',header = T,row.names = 1)
+
+DEgenes_DESeq2 <- as.character(rowData(ddsSE)$new_symbol[which(names(rowData(ddsSE)$new_symbol)%in%DEgenes_DESeq$Gene)])
+# DEgenes_DESeq2 <- as.character(rowData(ddsSE)$new_symbol[which(names(rowData(ddsSE)$new_symbol)%in%rownames(dds_DGE_results_df)[dds_DGE_results_df$p.adj.BH < 0.05])])
 
 # TRADITIONAL DEA (all GO terms) # Universe promote
 enrich_all <- enrichGO(DEgenes_DESeq2,
                        OrgDb = org.Hs.eg.db,
                        keyType = "SYMBOL",
                        universe = rowData(ddsSE)$new_symbol, 
-                       ont="BP",
+                       ont = "BP",
                        minGSSize = 10,
                        maxGSSize = 5000)
-write.csv(enrich_all@result,file='./NetActivity_results/SupTable8_enrichment_universe_PROMOTE_DEG.csv',sep = ",",row.names = T,quote = T,col.names = T)
+
+enrich_all_df <- enrich_all@result[,-9]
+colnames(enrich_all_df) <- c("GeneSet","Term","GeneRatio","BgRatio","pvalue","p.adj.BH","qvalue", "geneID")
+# write.csv(enrich_all_df, file = './NetActivity_results/manuscript_tables/SupTable8_enrichment_universe_PROMOTE_DEG.csv',quote = T,row.names = F)
+write.csv(enrich_all_df, file = 'results/mCRPC_analyses/SupTable8_enrichment_universe_PROMOTE_DEG.csv',quote = T,row.names = F)
+
+#PLOT
+ORA_dotplot <- clusterProfiler::dotplot(clusterProfiler::simplify(enrich_all))+scale_colour_viridis_b()+
+  ggtitle("Over-representation Analysis on differentially expressed genes (DESeq2)",
+          subtitle = "All biological process GOterms, all sample genes (traditional analysis)")
+
+# png(filename="./NetActivity_plots/manuscript_plots/ORAdotplot_DEgenes_traditional_analysis.png",res = 300,height = 25,width = 25,units = "cm")
+png(filename="figures/SupFig13_ORAdotplot_DEgenes_traditional_analysis.png",res = 300,height = 25,width = 25,units = "cm")
+ORA_dotplot
+dev.off()
+
 
 # Universe model genes; test intersect DEA and model genes (within universe)
+load(file = 'results/mCRPC_analyses/NetActivity_GTEX_PROMOTEv2.Rdata') # input_SE, scores
 model_genes <- unique(names(unlist(rowData(scores)$Weights_SYMBOL)))
+
 enrich_all2 <- enrichGO(intersect(DEgenes_DESeq2, model_genes),
                         OrgDb = org.Hs.eg.db,
                         keyType = "SYMBOL",
                         universe = model_genes, 
-                        ont="BP",
+                        ont = "BP",
                         minGSSize = 10,
                         maxGSSize = 5000)
-write.csv(enrich_all2@result,file='./NetActivity_results/SupTable9_enrichment_universe_NetActivity_DEG.csv',sep = ",",row.names = T,quote = T,col.names = T)
 
+enrich_all2_df <- enrich_all2@result[,-9]
+colnames(enrich_all2_df) <- c("GeneSet","Term","GeneRatio","BgRatio","pvalue","p.adj.BH","qvalue", "geneID")
 
+write.csv(enrich_all2_df, file='results/mCRPC_analyses/SupTable9_enrichment_universe_NetActivity_DEG.csv',quote = T,row.names = F)
 
-dotp3 <- clusterProfiler::dotplot(clusterProfiler::simplify(enrich_all2),showCategory=30)+scale_colour_viridis_b()+
-  ggtitle("Differential Expression Analysis",subtitle = "All terms (traditional analysis)")
-
-enrich_all_simplify <- clusterProfiler::simplify(enrich_all)
-enrich_all_subset <- enrich_all_simplify@result %>% filter(p.adjust<0.05)
-myGeneRatio <- sapply(enrich_all_subset$GeneRatio , function(x){
-  ratio <- as.numeric(stringr::str_split(x,"/")[[1]][1])/as.numeric(stringr::str_split(x,"/")[[1]][2])
-})
-
+message("Done!")
+# EOF

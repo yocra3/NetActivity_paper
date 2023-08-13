@@ -54,7 +54,7 @@ message("Change GENE ANNOTATIONS")
 # Matrix with the NetActivity computed Weights (GO pathways X  genes)
 data(gtex_gokegg)
 str(gtex_gokegg)
-model_genes_ENSG <- data.frame(ModelGenes=colnames(gtex_gokegg))
+model_genes_ENSG <- data.frame(ModelGenes = colnames(gtex_gokegg))
 
 # Get symbol IDs for MODEL
 
@@ -87,8 +87,8 @@ dim(sub_model_genes_ENSG) # diff of 1
 # Will duplicate this row in expression_mat with the two different ENSEMBLE ids
 sub_model_genes_ENSG[duplicated(sub_model_genes_ENSG$GeneSymbol),]# SMN1 will raise error in future scripts
 rep_gene <- sub_model_genes_ENSG[duplicated(sub_model_genes_ENSG$GeneSymbol),2]
-rep_gene_idx <- which(rownames(trimmed_expr_matrix)==rep_gene)
-rep_e_gene <- model_genes_ENSG[which(model_genes_ENSG$GeneSymbol==rep_gene),]$ModelGenes
+rep_gene_idx <- which(rownames(trimmed_expr_matrix) == rep_gene)
+rep_e_gene <- model_genes_ENSG[which(model_genes_ENSG$GeneSymbol == rep_gene),]$ModelGenes
 
 # Change rownames in expression matrix (be careful with order)
 idx <- match(rownames(trimmed_expr_matrix), sub_model_genes_ENSG$GeneSymbol)
@@ -108,9 +108,7 @@ message("Computing gene set scores")
 scores <- computeGeneSetScores(out, "gtex_gokegg")
 
 # Save data
-save(input_SE, scores, file='results/mCRPC_analyses/NetActivity_GTEX_PROMOTEv2.Rdata')
-
-# write.csv(x=assay(scores), file = "results/mCRPC_analyses/promoteV2_scores_GTEx.csv", sep = ",", row.names = T, quote = T, col.names = T)
+save(input_SE, scores, file = 'results/mCRPC_analyses/NetActivity_GTEX_PROMOTEv2.Rdata')
 
 # Differential gene set scores analysis ####
 # LINEAR MODEL WITH LIMMA
@@ -119,14 +117,13 @@ fit <- lmFit(assay(scores), mod) %>% eBayes()
 results <- decideTests(fit)
 
 # Test LM
-topTabraw <- topTable(fit, coef=2, n = Inf)
+topTabraw <- topTable(fit, coef = 2, n = Inf)
+topTabraw$Term <- rowData(scores)[rownames(topTabraw), "Term"]
 
 # Arrange data.frame
 topTab <- topTabraw
-topTab$Term <- rowData(scores)[rownames(topTab), "Term"]
 topTab$GeneSet <- rownames(topTab)
-i <- max(which(topTab$adj.P.Val<0.05))
-
+i <- max(which(topTab$adj.P.Val < 0.05))
 topTab <- topTab[c(8,7,1,3,4,5)]
 colnames(topTab) <- c( "GeneSet", "Term", "log2FC", "t","pvalue", "p.adj.BH")
 
@@ -134,10 +131,8 @@ colnames(topTab) <- c( "GeneSet", "Term", "log2FC", "t","pvalue", "p.adj.BH")
 
 message("Saving DGSA results")
 
-save(topTabraw, "results/mCRPC_analyses/promoteV2_DGSA_TTClog_GTEx.Rdata")
-write.csv(head(topTab,i),file='results/mCRPC_analyses/SupTable6_promoteV2_diff_paths_TTCajdustlog_GTEx.csv')
+save(topTabraw, file = "results/mCRPC_analyses/promoteV2_DGSA_TTClog_GTEx.Rdata")
+write.csv(head(topTab,i), file = 'results/mCRPC_analyses/SupTable6_promoteV2_diff_paths_TTCajdustlog_GTEx.csv')
 
 message("Done!")
-
-
-
+# EOF
