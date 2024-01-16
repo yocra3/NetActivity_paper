@@ -34,4 +34,6 @@ tissue <- gtex$smtsd
 write.table(tissue, file = "results/GTEx/individuals_labels.txt", quote = FALSE,
             row.names = FALSE, col.names = FALSE)
 
+gtex$Group <- gtex$smtsd
+saveHDF5SummarizedExperiment(gtex, "results/GTEx/", prefix = "vst_all_group_")
 

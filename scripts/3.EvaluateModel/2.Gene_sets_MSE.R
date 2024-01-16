@@ -53,10 +53,23 @@ pre <- read_training("results/GTEx_coding/paths_filt2_full_predense_v6.2/model_t
 post <- read_training("results/GTEx_coding/paths_filt2_full_postdense_v4.3/model_trained/GTEx_coding_training_evaluation.txt", "Gene Set + Dense")
 pre_post <- read_training("results/GTEx_coding/paths_filt2_full_prepostdense_v5.3/model_trained/GTEx_coding_training_evaluation.txt", "Dense + Gene Set + Dense")
 
-
+random <- read_training("results/randomGeneSets/a/model_training/Dataset_training_evaluation.txt", "Random")
 df.models <- Reduce(rbind, list(base, post, pre, pre_post)) %>%
   mutate(model = factor(model, levels = c("Gene Set", "Gene Set + Dense", "Dense + Gene Set", "Dense + Gene Set + Dense" )),
           dataset = ifelse(measure == "loss", "Training", "Validation"))
+
+# Sup Figure X -> random MSE
+png("figures/TCGA.pathways.trainingeval_models_random.png", width = 2700, height = 1000, res = 300)
+rbind(base, random) %>% 
+mutate(dataset = ifelse(measure == "loss", "Training", "Validation")) %>%
+filter(epoch > 1) %>%
+  ggplot(aes(x = epoch, y = mse, color = model, shape = dataset, group = paste(dataset, model) )) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  scale_color_discrete(name = "") +
+  scale_y_continuous(name = "MSE")
+dev.off()
 
 
 # Sup Figure 3

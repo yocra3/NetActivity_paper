@@ -572,15 +572,17 @@ plot_reprod <- ggplot(df_reprod, aes(x = Replicability, fill = Method, y = prop*
         text = element_text(size = 16))
   
 ## Figure 2
-png("figures/TCGAvsGEO_panel.png", width = 4000, height = 3200, res = 300)
-plot_grid(
+fig2_panel <- plot_grid(
   plot_grid(plot_stab, plot_reprod, nrow = 1, labels = c("A", "B"), label_size = 16, rel_widths = c(1, 1.3)),
   plot_grid(
     plot_grid(gene.plot, gsva.plot, hip.plot + theme(legend.position = "none"), path.plot, ncol = 2, labels = LETTERS[3:6], label_size = 16),
     legend, ncol = 2, rel_widths = c(5, 1)
   )
 , ncol = 1, rel_heights = c(1, 3))
+png("figures/TCGAvsGEO_panel.png", width = 4000, height = 3200, res = 300)
+fig2_panel
 dev.off()
+ggsave("figures/Figure2.eps", plot = fig2_panel, device = "eps", width = 4000, height = 3200, units = "px")
 
 
 

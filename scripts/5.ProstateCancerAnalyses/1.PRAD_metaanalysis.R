@@ -12,6 +12,8 @@ library(SummarizedExperiment)
 library(HDF5Array)
 library(NetActivity)
 library(cowplot)
+library(DESeq2)
+library(org.Hs.eg.db)
 
 createMETAL_tab <- function(fit){
 
@@ -474,6 +476,7 @@ lm.gse70769 <- lmFit(assay(gse70769_prep), mod_gse70769) %>% eBayes()
 tab.gse70769_gene <- topTable(lm.gse70769, coef = 2, n = Inf)
 
 ## GSE183019
+library(DESeq2)
 load("results/preprocess/GSE183019/GSE183019_counts.Rdata")
 gse183019_dds <- DESeqDataSet(gse183019_se, design = ~ 1)
 gse183019_vst <- varianceStabilizingTransformation(gse183019_dds)
@@ -523,7 +526,7 @@ lm.gse201284 <- lmFit(assay(gse201284_prep)[, rownames(mod_gse201284)], mod_gse2
 tab.gse201284_gene <- topTable(lm.gse201284, coef = 2, n = Inf)
 
 ## TCGA
-prad <- loadHDF5SummarizedExperiment("results/TCGA_gexp_coding_PRAD/", prefix = "vsd_norm_prad_tumor")
+prad <- loadHDF5SummarizedExperiment("results/TCGA_gexp_coding_noPRAD/", prefix = "vsd_norm_prad_tumor")
 prad$gleason <- factor(ifelse(prad$paper_Reviewed_Gleason_category == ">=8", "High", "Low"), levels = c("Low", "High"))
 assay(prad) <- data.matrix(assay(prad))
 
@@ -601,7 +604,9 @@ go1_plot <- gene_tab %>%
   geom_bar(stat = "identity", position = position_dodge()) +
   scale_fill_manual(values = c("green1", "green3", "green4", "lightblue", "blue", "blue4", "pink", "red", "red4")) +
   scale_color_manual(name = "", values = c("white", "black")) +
-  theme_bw()
+  theme_bw() +
+      theme(axis.text.x  = element_text(angle=45, vjust=0.5),
+            text = element_text(size = 16))
 
 
 
@@ -615,13 +620,18 @@ go2_plot <- gene_tab %>%
   xlab("") +
   scale_fill_manual(values = c("green1", "green3", "green4", "lightblue", "blue", "blue4", "pink", "red", "red4")) +
   scale_color_manual(name = "", values = c("white", "black")) +
-  theme_bw()
+  theme_bw() +
+      theme(axis.text.x  = element_text(angle=45, vjust=0.5),
+            text = element_text(size = 16))
 
 ## Figure 3
-png("figures/PRAD_metaanalysis.png", width = 1500, height = 800)
-plot_grid(
+fig3 <- plot_grid(
   plot_grid(ggdraw(p1), plotWeights("GO:0048012"), go1_plot, ncol = 3, labels = LETTERS[1:3]),
   plot_grid(ggdraw(p2), plotWeights("GO:0051984"), go2_plot, ncol = 3, labels = LETTERS[4:6]),
   nrow = 2
 )
+png("figures/PRAD_metaanalysis.png", width = 1500, height = 800)
+fig3
 dev.off()
+ggsave("figures/Figure3.eps", plot = fig3, device = "eps", width = 5000, height = 3500, units = "px")
+

@@ -83,6 +83,10 @@ gexp_fold_cod <- "results/TCGA_gexp_combat_coding/"
 
 saveHDF5SummarizedExperiment(vst_coding, "results/TCGA_gexp_combat_coding/", prefix = "vsd_norm")
 
+vst_coding$Group <- as.character(vst_coding$project_id)
+saveHDF5SummarizedExperiment(vst_coding, "results/TCGA_gexp_combat_coding/", prefix = "vsd_norm_group")
+
+
 ## Write gene names
 genes <- rownames(vst_coding)
 write.table(genes, file =  paste0(gexp_fold_cod, "input_genes.txt"), quote = FALSE,

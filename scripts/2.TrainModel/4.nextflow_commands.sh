@@ -320,6 +320,55 @@ nextflow run workflows/train_model.nf --hdf5_file results/GTEx/all_reshaped_stan
 done
 
 
+# Train subsets of gene sets
+sizes=(30 100 300 1000)
+
+for size in "${sizes[@]}"
+do
+  echo "Size: $size"
+  for rep in {1..10}
+  do
+    for i in {a..f}
+    do
+        nextflow run yocra3/NetActivityTrain --data_prefix results/GTEx/vst_all_group_ --gene_mask results/subsetGeneSets/subset_${rep}_N${size}_geneMap.tsv \
+        --network conf/network_params/dnn_gexp_autoencod_pathway_network3.py \
+        --network_params conf/network_params/params_dnn_gexp_pathway_network3_v11.py --outdir results/subsetGeneSets/models/size_${size}/${rep}/${i}/ -profile docker
+    done
+  done
+done
+
+sizes=(30 100 300 1000)
+
+for size in "${sizes[@]}"
+do
+  echo "Size: $size"
+  for rep in {1..10}
+  do
+         nextflow run yocra3/NetActivityTrain --data_prefix results/GTEx/vst_all_group_ --gene_mask results/subsetGeneSets/subset_${rep}_N${size}_geneMap.tsv \
+        --network conf/network_params/dnn_gexp_autoencod_pathway_network3.py \
+        --network_params conf/network_params/params_dnn_gexp_pathway_network3_v11.py --outdir results/subsetGeneSets/models/size_${size}/${rep}/f/ -profile docker
+  done
+done
+
+
+# Train random gene sets
+for i in {a..f}
+do
+  nextflow run yocra3/NetActivityTrain --data_prefix results/GTEx/vst_all_group_ --gene_mask results/randomGeneSets/random_geneMap.tsv \
+  --network conf/network_params/dnn_gexp_autoencod_pathway_network3.py \
+  --network_params conf/network_params/params_dnn_gexp_pathway_network3_v11.py --outdir results/randomGeneSets/${i}/ -profile docker
+done
+
+
+# Train model in TCGA data
+## TCGA gexp all - v3.11 features
+nextflow run yocra3/NetActivityTrain --data_prefix results/TCGA_gexp_combat_coding/vsd_norm_group --gene_mask results/TCGA_gexp_combat_coding/gene_map.tsv \
+--network conf/network_params/dnn_gexp_autoencod_pathway_network3.py \
+--network_params conf/network_params/params_dnn_gexp_pathway_network3_v11.py --outdir results/TCGA_model/ -profile docker
+
+
+#
+
 
 # Compute GSAS in different datasets
 ## Compute GSAS in PRAD

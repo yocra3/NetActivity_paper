@@ -39,12 +39,22 @@ makeDFsum <- function(cors, mod_name){
 
 }
 
+readCors <- function(base, models, paths.name, model.name){
+  base <- readPathways(base, models, paths.name)
+  base.cors <- sapply(paths.name, pathwayCorr, path_list = base)
+  colnames(base.cors) <- paths.name
+  # rownames(base.cors) <- c("1-2", "1-3", "2-3", "1-4", "2-4", "3-4", "1-5", "2-5", "3-5", "4-5")
+  df.base <- makeDFsum(base.cors, model.name) %>%
+    left_join(data.frame(kegg.N) %>% mutate(path = Var1) %>% select(-Var1), by = "path")
 
+}
 ## Load pathways annotations
 kegg.map <- read.table("results/preprocess/go_kegg_gene_map.tsv", header = TRUE)
 paths <- read.table("results/GTEx_coding/paths_all_full_v3.11/model_trained/pathways_names.txt", header = TRUE)
 paths.vec <- as.character(paths[, 1])
 input_genes <- read.table("results/GTEx_coding/input_genes.txt", header = FALSE)
+paths.ini <- read.table("results/GTEx_coding/paths_all_full_v3.11/model_trained/pathways_names.txt", header = TRUE)
+paths.ini <- as.character(paths.ini[, 1])
 
 
 
@@ -62,6 +72,29 @@ gene_d <- dist(gene_mat, "binary")
 save(gene_d, file = "results/GTEx_coding/go_kegg_pathways_distance.Rdata")
 gene_dmat <- as.matrix(gene_d)
 
+
+## Compare similarity and replicability
+all_train <- readCors("paths_all_full_v3.11", c("", letters[1:5]), paths.ini, "All gene sets") %>%
+  mutate(training = "Step 1 + step 2 + step 3")
+
+gene_sim <- gene_dmat 
+diag(gene_sim) <- 1
+maxSim <- rowMins(gene_sim)
+
+all_train$Sim <- 1 - maxSim[all_train$path]
+
+png("figures/geneset_similary_robustness.png", width = 1800, height = 900, res = 300)
+all_train %>% 
+  mutate(Selection = ifelse(Freq > 30, "Large", "Small"),
+  Select = factor(Selection, levels = c("Small", "Large"))) %>%
+ggplot(aes(x = Sim, y = minCor)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth() +  
+  ylab("Robustness") +
+  xlab("Similarity") +
+  theme_bw() +
+  facet_grid(~ Selection)
+dev.off()
 
 ## Select gene sets by number of genes and similarity
 good_paths <- as.character(subset(kegg.N, Freq < 30 & Freq >= 10)$Var)

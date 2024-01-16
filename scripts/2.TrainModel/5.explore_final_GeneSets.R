@@ -81,39 +81,7 @@ top_summary <- top_summary[, c(1:3, 7, 4:6)]
 write.table(top_summary, file = "figures/sel_pathways_GO_topCats.txt", quote = FALSE,
   col.names = TRUE, row.names = FALSE, sep = "\t")
 
-#
-# top_paths <- tail(names(sort(table(main_gos_df$Top_path))), 10)
-#
-# a <- subset(top_summary, Final > 0)
-# cor(a$Prop_Initial_Total, a$Prop_Initial, use = "complete")
-#
-#
-# png("figures/cot.png")
-# ggplot(top_summary, aes(x = Prop_Initial, y = Prop_Initial_Total, size = log10(Total))) +
-#   geom_point() +
-#   theme_bw()
-# dev.off()
-#
-# png("figures/sel_pathways_GO_top_distr.png", width = 2000)
-# filter(main_gos_df, Top_path %in% top_paths) %>%
-#   group_by(Top_path ) %>%
-#   summarize(Total = n(), Initial = sum(Original == "Initial"), Final = sum(Model == "Included")) %>%
-#   gather(Dataset, N, 2:4) %>%
-#   mutate(Dataset = factor(Dataset, levels = c("Total", "Initial", "Final"))) %>%
-#   ggplot(aes(x = Dataset, y = N, fill = Dataset)) +
-#   geom_bar(stat = "identity") +
-#   theme_bw() +
-#   facet_wrap(~ Top_path)
-# dev.off()
-#
-# prop.table(data.matrix(subset(top_summary, Top_path %in% top_paths)[, 4:5]), margin = 1)
-# chisq.test(subset(top_summary, Top_path %in% top_paths)[-c(4, 8), 4:5])
-#
-# #
-# group_by(main_gos_df, distance ) %>%
-#   summarize(Total = n(), Initial = sum(Original == "Initial"), Final = sum(Model == "Included")) %>%
-#   data.frame()
-#
+
 
 ## KEGG
 kegg.annot <- fromJSON(file = "data/kegg_pathways.json")

@@ -176,13 +176,13 @@ png("figures/mainModel_robustness.png", height = 900, width = 2500, res = 300)
 plot_rep2
 dev.off()
 
-## Sup Figure 15
+## Sup Figure 1
 plot_genes <-  df.path_sel %>%
   filter(group == "All GOs + KEGGs") %>%
   ggplot(aes(x = Freq, y = minCor)) +
     geom_point() +
     scale_x_log10(name = "Genes per gene set") +
-    scale_y_continuous(name = "Replicability") +
+    scale_y_continuous(name = "Robustness") +
     theme_bw() +
     facet_wrap(~ training) +
     geom_vline(xintercept = 30, linetype = "dashed", color = "grey")
@@ -201,13 +201,13 @@ df.mod <- Reduce(rbind, list(main,post2, pre2, pre2.post)) %>%
   mutate( training = recode(training, `Step 1 + step 2 + step 3` = "Gene Set"),
           training = factor(training , levels = c("Gene Set", "Gene Set + Dense", "Dense + Gene Set", "Dense + Gene Set + Dense")))
 
-## Sup Figure 2
+## Sup Figure 4
 png("figures/minCor_models.png", width = 2400, height = 900, res = 300)
 df.mod %>%
   ggplot(aes(x = training, y = minCor)) +
   geom_boxplot() +
   theme_bw() +
-  scale_y_continuous(name = "Replicability") +
+  scale_y_continuous(name = "Robustness") +
   xlab("Network structure")
 dev.off()
 
@@ -223,13 +223,13 @@ df.train <- Reduce(rbind, list(main, drop, drop_full)) %>%
 save(df.path_sel, df.mod, df.train, file = "results/manuscript/df_gtex_training_replicability.Rdata")
 
 
-## Sup Figure 4
+## Sup Figure 6
 png("figures/minCor_training.png", width = 1800, height = 900, res = 300)
 df.train %>%
   ggplot(aes(x = Training, y = minCor)) +
   geom_boxplot() +
   theme_bw() +
-  scale_y_continuous(name = "Replicability")
+  scale_y_continuous(name = "Robustness")
 dev.off()
 
 ## Plot correlation of worse path
@@ -237,3 +237,44 @@ path_vals <- readPathways("paths_filt3_full_v3.6", sufix = c("", letters[1:5]), 
 path_mat <- sapply(path_vals, function(m) m[, 427 ])
 path_mat2 <- path_mat
 path_mat2[, 5] <-  - path_mat2[, 5]
+
+## Evaluate training robustness
+## Random gene sets
+library(NetActivity)
+## Load data ####
+gtex <- loadHDF5SummarizedExperiment("results/GTEx/", prefix = "vst_all_group_")
+norm <- prepareSummarizedExperiment(gtex, "gtex_gokegg")
+
+pathwayCorr2 <- function(path_list, row){
+  path_mat <- sapply(path_list, function(x) x[row, ])
+  cors <- cor(path_mat, method = "spearman")
+  cors[upper.tri(cors)]
+}
+
+randomGSAS <- lapply(letters[1:6], function(i){
+    load(paste0("results/randomGeneSets/", i, "/NetActivity_weights/Dataset_NetActivity_weights.Rdata"))
+    scores <- computeGeneSetScores(norm, weights)
+    tab <- data.matrix(assay(scores))
+    tab
+  })
+paths.name2 <- rownames(randomGSAS[[1]]) 
+rand.cors <- sapply(paths.name2, pathwayCorr2, path_list = randomGSAS)
+colnames(rand.cors) <- paths.name2
+df.random <- makeDFsum(rand.cors, "Random")
+
+df.gene_sets <- rbind(main %>% select(-Freq, -training), df.random) %>%
+  rbind(all_train %>% select(-Freq, -training))
+
+
+### Sup Figure 3
+png("figures/robustness_randomGeneSets.png", height = 900, width = 2500, res = 300)
+df.gene_sets %>%
+  mutate(model = factor(model, levels = c("All gene sets", "Selected gene sets", "Random"))) %>%
+  ggplot(aes(x = model, y = minCor)) +
+   geom_boxplot() +
+ scale_x_discrete(name = "") +
+ scale_y_continuous(name = "Robustness") +
+ theme_bw() +
+ theme(plot.title = element_text(hjust = 0.5),
+                  text = element_text(size = 20))
+dev.off()

@@ -1,7 +1,3 @@
-docker run -v $PWD:$PWD -it yocra3/episignatures_python:1.4 bash
-cd /home/SHARED/PROJECTS/Episignatures
-python
-
 #'#################################################################################
 #'#################################################################################
 #' Standardize Gene expression data
