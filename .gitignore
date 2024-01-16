@@ -52,3 +52,6 @@ rsconnect/
 results/
 figures/
 data/
+.nextflow/
+work/
+.nextflow.*
